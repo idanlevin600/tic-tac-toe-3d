@@ -1,17 +1,19 @@
+//src/App.js
 import React, { useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import TicTacToeBoard from './TicTacToeBoard';
+import RaycasterHandler from './RaycasterHandler';
 
 const App = () => {
   const initialState = Array(6).fill().map(() => Array(9).fill(null));
   const [gameState, setGameState] = useState(initialState);
   const [currentPlayer, setCurrentPlayer] = useState('X');
+  const [winner, setWinner] = useState(null);
+  const [winningCells, setWinningCells] = useState([]);
 
   const handleCellClick = (face, cell) => {
-    if (gameState[face][cell] !== null) return;
-
-    console.log(`Cell clicked: Face ${face}, Cell ${cell}`);
+    if (gameState[face][cell] !== null || winner) return;
 
     let newGameState = gameState.map((board, idx) => {
       if (idx === face) {
@@ -37,27 +39,62 @@ const App = () => {
     }
 
     setGameState(newGameState);
-    setCurrentPlayer(currentPlayer === 'X' ? 'O' : 'X');
 
-    // Check for win or draw
-    checkWin(newGameState);
+    const { winningPlayer, winningCells } = checkCubeWin(newGameState);
+    if (winningPlayer) {
+      setWinner(winningPlayer);
+      setWinningCells(winningCells);
+    } else {
+      setCurrentPlayer(currentPlayer === 'X' ? 'O' : 'X');
+    }
+  };
+
+  const checkFaceWin = (board) => {
+    const lines = [
+      // Rows
+      [0, 1, 2], [3, 4, 5], [6, 7, 8],
+      // Columns
+      [0, 3, 6], [1, 4, 7], [2, 5, 8],
+      // Diagonals
+      [0, 4, 8], [2, 4, 6]
+    ];
+
+    for (let line of lines) {
+      const [a, b, c] = line;
+      if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+        return { winner: board[a], line };
+      }
+    }
+    return { winner: null, line: [] };
+  };
+
+  const checkCubeWin = (gameState) => {
+    let winningPlayer = null;
+    let winningCells = [];
+
+    for (let face = 0; face < 6; face++) {
+      const { winner, line } = checkFaceWin(gameState[face]);
+      if (winner) {
+        winningPlayer = winner;
+        winningCells.push(...line.map(cell => ({ face, cell })));
+      }
+    }
+    return { winningPlayer, winningCells };
   };
 
   const isCornerCell = (face, cell) => {
-    // Define corner cells for each face
     const corners = {
-      0: [0, 1 ,2 ,3 ,5 ,6 ,7 , 8],
-      1: [0, 1 ,2 ,3 ,5 ,6 ,7 , 8],
-      2: [0, 1 ,2 ,3 ,5 ,6 ,7 , 8],
-      3: [0, 1 ,2 ,3 ,5 ,6 ,7 , 8],
-      4: [0, 1 ,2 ,3 ,5 ,6 ,7 , 8],
-      5: [0, 1 ,2 ,3 ,5 ,6 ,7 , 8],
+      0: [0, 1, 2, 3, 5, 6, 7, 8],
+      1: [0, 1, 2, 3, 5, 6, 7, 8],
+      2: [0, 1, 2, 3, 5, 6, 7, 8],
+      3: [0, 1, 2, 3, 5, 6, 7, 8],
+      4: [0, 1, 2, 3, 5, 6, 7, 8],
+      5: [0, 1, 2, 3, 5, 6, 7, 8],
     };
     return corners[face].includes(cell);
   };
 
   const getAdjacentCells = (face, cell) => {
-    // Define adjacent cells for each corner cell
     const adjacentMap = {
       '0-0': [[4, 6], [3, 2]],
       '0-1': [[4, 7]],
@@ -111,24 +148,21 @@ const App = () => {
     return adjacentMap[`${face}-${cell}`] || [];
   };
 
-  const checkWin = (gameState) => {
-    // Add your win checking logic here
-  };
-
   const resetGame = () => {
     setGameState(initialState);
     setCurrentPlayer('X');
+    setWinner(null);
+    setWinningCells([]);
   };
 
   return (
     <>
       <button onClick={resetGame}>Reset Game</button>
+      {winner && <div style={{ position: 'absolute', top: '10%', left: '50%', transform: 'translateX(-50%)', fontSize: '2rem', color: 'red' }}>Player {winner} wins!</div>}
       <Canvas style={{ height: '100vh' }}>
         <ambientLight intensity={0.5} />
         <pointLight position={[10, 10, 10]} />
-        <mesh>
-          <boxGeometry args={[1, 1, 1]} />
-          <meshStandardMaterial color="orange" />
+        <group>
           {gameState.map((board, idx) => (
             <TicTacToeBoard
               key={idx}
@@ -137,10 +171,12 @@ const App = () => {
               position={getBoardPosition(idx)}
               rotation={getBoardRotation(idx)}
               onCellClick={handleCellClick}
+              winningCells={winningCells.filter(cell => cell.face === idx).map(cell => cell.cell)}
             />
           ))}
-        </mesh>
+        </group>
         <OrbitControls />
+        <RaycasterHandler onCellClick={handleCellClick} />
       </Canvas>
     </>
   );
@@ -148,9 +184,9 @@ const App = () => {
 
 const getBoardPosition = (idx) => {
   const positions = [
-    [0, 0, 0.51], [0, 0, -0.51],
-    [0.51, 0, 0], [-0.51, 0, 0],
-    [0, 0.51, 0], [0, -0.51, 0],
+    [0, 0, 1.5], [0, 0, -1.5],
+    [1.5, 0, 0], [-1.5, 0, 0],
+    [0, 1.5, 0], [0, -1.5, 0],
   ];
   return positions[idx];
 };
