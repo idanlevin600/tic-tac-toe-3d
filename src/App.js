@@ -12,7 +12,7 @@ const App = () => {
   const [winner, setWinner] = useState(null);
   const [winningCells, setWinningCells] = useState([]);
 
-  const handleCellClick = (face, cell) => {
+  const handleCellDoubleClick = (face, cell) => {
     if (gameState[face][cell] !== null || winner) return;
 
     let newGameState = gameState.map((board, idx) => {
@@ -59,27 +59,44 @@ const App = () => {
       [0, 4, 8], [2, 4, 6]
     ];
 
+    const triples = [];
+
     for (let line of lines) {
       const [a, b, c] = line;
       if (board[a] && board[a] === board[b] && board[a] === board[c]) {
-        return { winner: board[a], line };
+        triples.push(line);
       }
     }
-    return { winner: null, line: [] };
+    return triples;
   };
 
   const checkCubeWin = (gameState) => {
-    let winningPlayer = null;
-    let winningCells = [];
+    let triplesX = 0;
+    let triplesO = 0;
+    let winningCellsX = [];
+    let winningCellsO = [];
 
     for (let face = 0; face < 6; face++) {
-      const { winner, line } = checkFaceWin(gameState[face]);
-      if (winner) {
-        winningPlayer = winner;
-        winningCells.push(...line.map(cell => ({ face, cell })));
-      }
+      const triples = checkFaceWin(gameState[face]);
+      triples.forEach(line => {
+        if (gameState[face][line[0]] === 'X') {
+          triplesX++;
+          winningCellsX.push(...line.map(cell => ({ face, cell })));
+        } else if (gameState[face][line[0]] === 'O') {
+          triplesO++;
+          winningCellsO.push(...line.map(cell => ({ face, cell })));
+        }
+      });
     }
-    return { winningPlayer, winningCells };
+
+    if (triplesX >= 3) {
+      return { winningPlayer: 'X', winningCells: winningCellsX };
+    }
+    if (triplesO >= 3) {
+      return { winningPlayer: 'O', winningCells: winningCellsO };
+    }
+
+    return { winningPlayer: null, winningCells: [] };
   };
 
   const isCornerCell = (face, cell) => {
@@ -170,13 +187,13 @@ const App = () => {
               board={board}
               position={getBoardPosition(idx)}
               rotation={getBoardRotation(idx)}
-              onCellClick={handleCellClick}
+              onCellDoubleClick={handleCellDoubleClick}
               winningCells={winningCells.filter(cell => cell.face === idx).map(cell => cell.cell)}
             />
           ))}
         </group>
         <OrbitControls />
-        <RaycasterHandler onCellClick={handleCellClick} />
+        <RaycasterHandler onCellDoubleClick={handleCellDoubleClick} />
       </Canvas>
     </>
   );

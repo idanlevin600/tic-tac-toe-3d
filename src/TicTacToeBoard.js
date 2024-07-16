@@ -6,14 +6,20 @@ import * as THREE from 'three';
 
 extend({ Line_: Line });
 
-const TicTacToeBoard = ({ face, board, position, rotation, onCellClick, winningCells }) => {
+const TicTacToeBoard = ({ face, board, position, rotation, onCellDoubleClick, winningCells }) => {
   const renderCell = (cell, idx) => {
     const isWinningCell = winningCells.includes(idx);
     return (
       <group key={idx} position={getCellPosition(idx)}>
-        <mesh userData={{ face, cell: idx }}>
+        <mesh
+          userData={{ face, cell: idx }}
+          onDoubleClick={(e) => {
+            onCellDoubleClick(face, idx);
+            e.stopPropagation();
+          }}
+        >
           <boxGeometry args={[1, 1, 0.1]} />
-          <meshBasicMaterial color={isWinningCell ? '#55ff0d' : cell ? (cell === 'X' ? 'red' : 'blue') : 'white'} />
+          <meshBasicMaterial color={isWinningCell ? 'lightgreen' : cell ? (cell === 'X' ? 'red' : 'blue') : 'white'} />
         </mesh>
       </group>
     );
