@@ -1,9 +1,9 @@
-//src/App.js
 import React, { useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import TicTacToeBoard from './TicTacToeBoard';
 import RaycasterHandler from './RaycasterHandler';
+import bombIcon from './bomb.png'; // Make sure the path to the bomb image is correct
 
 const App = () => {
   const initialState = Array(6).fill().map(() => Array(9).fill(null));
@@ -11,9 +11,20 @@ const App = () => {
   const [currentPlayer, setCurrentPlayer] = useState('X');
   const [winner, setWinner] = useState(null);
   const [winningCells, setWinningCells] = useState([]);
+  const [bombUsed, setBombUsed] = useState({ X: false, O: false });
+  const [bombMode, setBombMode] = useState(false);
+  const [bombCells, setBombCells] = useState([]);
+  const [highlightedCells, setHighlightedCells] = useState([]);
 
   const handleCellDoubleClick = (face, cell) => {
-    if (gameState[face][cell] !== null || winner) return;
+    if (winner) return;
+
+    if (bombMode) {
+      handleBombCellSelection(face, cell);
+      return;
+    }
+
+    if (gameState[face][cell] !== null) return;
 
     let newGameState = gameState.map((board, idx) => {
       if (idx === face) {
@@ -47,6 +58,73 @@ const App = () => {
     } else {
       setCurrentPlayer(currentPlayer === 'X' ? 'O' : 'X');
     }
+  };
+
+  const handleBombClick = () => {
+    if (bombUsed[currentPlayer] || winner) return;
+    console.log(`${currentPlayer} is entering bomb mode`);
+    setBombMode(true);
+  };
+
+  const handleBombCellSelection = (face, cell) => {
+    const newBombCells = [...bombCells, { face, cell }];
+    const newHighlightedCells = [...highlightedCells, { face, cell }];
+
+    if (isCornerCell(face, cell)) {
+      const adjacentCells = getAdjacentCells(face, cell);
+      adjacentCells.forEach(([adjFace, adjCell]) => {
+        newHighlightedCells.push({ face: adjFace, cell: adjCell });
+      });
+    }
+
+    setBombCells(newBombCells);
+    setHighlightedCells(newHighlightedCells);
+    console.log(`Selected cells for bombing: ${JSON.stringify(newBombCells)}`);
+
+    if (newBombCells.length === 3) {
+      if (isValidTriple(newBombCells)) {
+        explodeBomb(newHighlightedCells);
+      } else {
+        alert("Invalid triple selection. Please select a valid triple.");
+        setBombCells([]);
+        setHighlightedCells([]);
+      }
+    }
+  };
+
+  const isValidTriple = (cells) => {
+    if (cells.length !== 3) return false;
+    const faces = cells.map(c => c.face);
+    const positions = cells.map(c => c.cell);
+    const uniqueFaces = new Set(faces);
+    if (uniqueFaces.size !== 1) return false;
+    const face = faces[0];
+    const lines = [
+      [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
+      [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
+      [0, 4, 8], [2, 4, 6]  // Diagonals
+    ];
+    return lines.some(line => line.every(pos => positions.includes(pos)));
+  };
+
+  const explodeBomb = (cells) => {
+    let newGameState = gameState.map((board, faceIdx) => {
+      if (cells.some(c => c.face === faceIdx)) {
+        const newBoard = [...board];
+        cells.filter(c => c.face === faceIdx).forEach(({ cell }) => {
+          newBoard[cell] = null;
+        });
+        return newBoard;
+      }
+      return board;
+    });
+
+    setGameState(newGameState);
+    setBombUsed({ ...bombUsed, [currentPlayer]: true });
+    setBombMode(false);
+    setBombCells([]);
+    setHighlightedCells([]);
+    setCurrentPlayer(currentPlayer === 'X' ? 'O' : 'X');
   };
 
   const checkFaceWin = (board) => {
@@ -170,12 +248,22 @@ const App = () => {
     setCurrentPlayer('X');
     setWinner(null);
     setWinningCells([]);
+    setBombUsed({ X: false, O: false });
+    setBombMode(false);
+    setBombCells([]);
+    setHighlightedCells([]);
   };
 
   return (
     <>
       <button onClick={resetGame}>Reset Game</button>
       {winner && <div style={{ position: 'absolute', top: '10%', left: '50%', transform: 'translateX(-50%)', fontSize: '2rem', color: 'red' }}>Player {winner} wins!</div>}
+      <div style={{ position: 'absolute', top: '10%', right: '10%', cursor: 'pointer', zIndex: 1 }}>
+        {bombUsed['X'] ? null : <img src={bombIcon} alt="Bomb Icon X" style={{ width: 50, height: 50 }} onClick={() => { if (currentPlayer === 'X') handleBombClick(); }} />}
+      </div>
+      <div style={{ position: 'absolute', top: '10%', right: '20%', cursor: 'pointer', zIndex: 1 }}>
+        {bombUsed['O'] ? null : <img src={bombIcon} alt="Bomb Icon O" style={{ width: 50, height: 50 }} onClick={() => { if (currentPlayer === 'O') handleBombClick(); }} />}
+      </div>
       <Canvas style={{ height: '100vh' }}>
         <ambientLight intensity={0.5} />
         <pointLight position={[10, 10, 10]} />
@@ -189,6 +277,9 @@ const App = () => {
               rotation={getBoardRotation(idx)}
               onCellDoubleClick={handleCellDoubleClick}
               winningCells={winningCells.filter(cell => cell.face === idx).map(cell => cell.cell)}
+              bombMode={bombMode}
+              bombCells={bombCells}
+              highlightedCells={highlightedCells}
             />
           ))}
         </group>

@@ -1,4 +1,3 @@
-//src/TicTacToeBoard.js
 import React from 'react';
 import { extend } from '@react-three/fiber';
 import { Line } from '@react-three/drei';
@@ -6,9 +5,12 @@ import * as THREE from 'three';
 
 extend({ Line_: Line });
 
-const TicTacToeBoard = ({ face, board, position, rotation, onCellDoubleClick, winningCells }) => {
+const TicTacToeBoard = ({ face, board, position, rotation, onCellDoubleClick, winningCells, bombMode, bombCells, highlightedCells }) => {
   const renderCell = (cell, idx) => {
     const isWinningCell = winningCells.includes(idx);
+    const isSelectedForBomb = bombCells.some(bc => bc.face === face && bc.cell === idx);
+    const isHighlightedCell = highlightedCells.some(hc => hc.face === face && hc.cell === idx);
+    
     return (
       <group key={idx} position={getCellPosition(idx)}>
         <mesh
@@ -19,7 +21,10 @@ const TicTacToeBoard = ({ face, board, position, rotation, onCellDoubleClick, wi
           }}
         >
           <boxGeometry args={[1, 1, 0.1]} />
-          <meshBasicMaterial color={isWinningCell ? 'lightgreen' : cell ? (cell === 'X' ? 'red' : 'blue') : 'white'} />
+          <meshBasicMaterial color={
+            isSelectedForBomb || isHighlightedCell ? 'yellow' :
+            isWinningCell ? 'lightgreen' :
+            cell ? (cell === 'X' ? 'red' : 'blue') : 'white'} />
         </mesh>
       </group>
     );
