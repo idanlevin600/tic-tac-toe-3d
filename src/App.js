@@ -4,6 +4,7 @@ import { OrbitControls } from '@react-three/drei';
 import TicTacToeBoard from './TicTacToeBoard';
 import RaycasterHandler from './RaycasterHandler';
 import bombIcon from './bomb.png'; // Make sure the path to the bomb image is correct
+import GameModeModal from './GameModeModal'; // Import the new modal component
 
 const App = () => {
   const initialState = Array(6).fill().map(() => Array(9).fill(null));
@@ -15,6 +16,12 @@ const App = () => {
   const [bombMode, setBombMode] = useState(false);
   const [bombCells, setBombCells] = useState([]);
   const [highlightedCells, setHighlightedCells] = useState([]);
+  const [gameMode, setGameMode] = useState(null); // Add state for game mode
+  const [modalOpen, setModalOpen] = useState(true); // Add state to control modal visibility
+
+  const handleModalClose = () => {
+    setModalOpen(false);
+  };
 
   const handleCellDoubleClick = (face, cell) => {
     if (winner) return;
@@ -252,10 +259,16 @@ const App = () => {
     setBombMode(false);
     setBombCells([]);
     setHighlightedCells([]);
+    setModalOpen(true); // Open the modal when resetting the game
   };
 
   return (
     <>
+      <GameModeModal
+        open={modalOpen}
+        handleClose={handleModalClose}
+        setGameMode={setGameMode}
+      />
       <button onClick={resetGame}>Reset Game</button>
       {winner && <div style={{ position: 'absolute', top: '10%', left: '50%', transform: 'translateX(-50%)', fontSize: '2rem', color: 'red' }}>Player {winner} wins!</div>}
       <div style={{ position: 'absolute', top: '10%', right: '10%', cursor: 'pointer', zIndex: 1 }}>

@@ -23,7 +23,7 @@ const TicTacToeBoard = ({ face, board, position, rotation, onCellDoubleClick, wi
           <boxGeometry args={[1, 1, 0.1]} />
           <meshBasicMaterial color={
             isSelectedForBomb || isHighlightedCell ? 'yellow' :
-            isWinningCell ? 'lightgreen' :
+            isWinningCell ? '#40ff00' :
             cell ? (cell === 'X' ? 'red' : 'blue') : 'white'} />
         </mesh>
       </group>
