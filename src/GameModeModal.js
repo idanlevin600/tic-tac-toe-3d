@@ -19,13 +19,13 @@ const ModalBox = styled(Box)(({ theme }) => ({
 const GameModeModal = ({ open, handleClose, setGameMode }) => {
   const handleModeSelection = (mode) => {
     setGameMode(mode);
-    handleClose();
+    handleClose(mode);
   };
 
   return (
     <Modal
       open={open}
-      onClose={handleClose}
+      onClose={() => handleClose(null)}
       aria-labelledby="game-mode-modal-title"
       aria-describedby="game-mode-modal-description"
     >

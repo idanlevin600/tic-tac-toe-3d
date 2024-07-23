@@ -5,7 +5,7 @@ import * as THREE from 'three';
 
 extend({ Line_: Line });
 
-const TicTacToeBoard = ({ face, board, position, rotation, onCellDoubleClick, winningCells, bombMode, bombCells, highlightedCells }) => {
+const TicTacToeBoard = ({ face, board, position, rotation, onCellClick, winningCells, bombMode, bombCells, highlightedCells }) => {
   const renderCell = (cell, idx) => {
     const isWinningCell = winningCells.includes(idx);
     const isSelectedForBomb = bombCells.some(bc => bc.face === face && bc.cell === idx);
@@ -16,7 +16,7 @@ const TicTacToeBoard = ({ face, board, position, rotation, onCellDoubleClick, wi
         <mesh
           userData={{ face, cell: idx }}
           onDoubleClick={(e) => {
-            onCellDoubleClick(face, idx);
+            onCellClick(face, idx);
             e.stopPropagation();
           }}
         >
