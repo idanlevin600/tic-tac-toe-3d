@@ -10,12 +10,12 @@ const TicTacToeBoard = ({ face, board, position, rotation, onCellClick, winningC
     const isWinningCell = winningCells.includes(idx);
     const isSelectedForBomb = bombCells.some(bc => bc.face === face && bc.cell === idx);
     const isHighlightedCell = highlightedCells.some(hc => hc.face === face && hc.cell === idx);
-    
+
     return (
       <group key={idx} position={getCellPosition(idx)}>
         <mesh
           userData={{ face, cell: idx }}
-          onDoubleClick={(e) => {
+          onDoubleClick={(e) => {  // Change this line
             onCellClick(face, idx);
             e.stopPropagation();
           }}

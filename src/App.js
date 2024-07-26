@@ -6,41 +6,59 @@ import RaycasterHandler from './RaycasterHandler';
 import bombIcon from './bomb.png'; // Make sure the path to the bomb image is correct
 import GameModeModal from './GameModeModal'; // Import the new modal component
 
-const MAX_DEPTH = 4; // Limit the depth of the Minimax algorithm
+const MAX_DEPTH = 12; // Increase the depth limit
 
 const App = () => {
   const initialState = Array(6).fill().map(() => Array(9).fill(null));
   const [gameState, setGameState] = useState(initialState);
-  const [currentPlayer, setCurrentPlayer] = useState('X');
+  const [currentPlayer, setCurrentPlayer] = useState('O'); // Start with 'O' (AI)
   const [winner, setWinner] = useState(null);
   const [winningCells, setWinningCells] = useState([]);
   const [bombUsed, setBombUsed] = useState({ X: false, O: false });
   const [bombMode, setBombMode] = useState(false);
   const [bombCells, setBombCells] = useState([]);
   const [highlightedCells, setHighlightedCells] = useState([]);
-  const [gameMode, setGameMode] = useState(null); // Add state for game mode
+  const [gameMode, setGameMode] = useState('single'); // Set default game mode to 'single'
   const [modalOpen, setModalOpen] = useState(true); // Add state to control modal visibility
+  const [aiMovePending, setAiMovePending] = useState(true); // Flag to trigger AI move immediately
+  const [bombPending, setBombPending] = useState(false); // Flag to trigger bomb usage
 
   const handleModalClose = (mode) => {
     console.log('Game mode selected:', mode);
     setGameMode(mode);
     setModalOpen(false);
-    if (mode === 'single') {
-      // AI makes the first move
-      const [bestFace, bestCell] = findBestMove(initialState);
-      handleCellClick(bestFace, bestCell);
+    if (mode === 'single' && currentPlayer === 'O') {
+      setAiMovePending(true); // Trigger AI move if it's the computer's turn
     }
   };
 
   useEffect(() => {
     console.log('useEffect triggered', { gameMode, currentPlayer, winner });
-    if (gameMode === 'single' && currentPlayer === 'X' && !winner) {
+    if (aiMovePending) {
       console.log('AI is making a move');
-      const [bestFace, bestCell] = findBestMove(gameState);
-      console.log('Best move found by AI:', { bestFace, bestCell });
-      setTimeout(() => handleCellClick(bestFace, bestCell), 500); // Small delay to simulate thinking
+      const bombDecision = shouldUseBomb(gameState);
+      if (bombDecision.useBomb) {
+        alert("AI wants to use the bomb!");
+        setBombPending(true);
+      } else {
+        const [bestFace, bestCell] = findBestMove(gameState);
+        console.log('Best move found by AI:', { bestFace, bestCell });
+        setTimeout(() => handleCellClick(bestFace, bestCell), 500); // Small delay to simulate thinking
+        setAiMovePending(false); // Reset the flag after AI makes its move
+      }
     }
-  }, [gameState, currentPlayer, gameMode, winner]);
+  }, [aiMovePending]);
+
+  useEffect(() => {
+    if (bombPending) {
+      const bombDecision = shouldUseBomb(gameState);
+      handleBombUsage(bombDecision.bombCells);
+      setBombPending(false);
+      setAiMovePending(false);
+      setCurrentPlayer('X'); // Switch back to player's turn after AI uses bomb
+    }
+  }, [bombPending]);
+  
 
   const handleCellClick = (face, cell) => {
     if (bombMode) {
@@ -82,116 +100,228 @@ const App = () => {
       setWinningCells(winningCells);
       console.log('Winner found:', winningPlayer);
     } else {
-      setCurrentPlayer(currentPlayer === 'X' ? 'O' : 'X');
+      if (currentPlayer === 'X' && gameMode === 'single') {
+        setCurrentPlayer('O');
+        setTimeout(() => setAiMovePending(true), 500); // Trigger AI move after a delay
+      } else {
+        setCurrentPlayer(currentPlayer === 'X' ? 'O' : 'X');
+      }
     }
   };
 
-  // Optimized Minimax Algorithm with Alpha-Beta Pruning and Depth Limiting
-  const findBestMove = (gameState) => {
-    let bestVal = -Infinity;
-    let bestMove = [-1, -1];
+  const shouldUseBomb = (gameState) => {
+    if (bombUsed['O']) return { useBomb: false, bombCells: [] };
+
+    let playerSequences = 0;
+    let almostCompleteSequence = false;
+    let completedSequences = [];
+    let bombCells = [];
 
     for (let face = 0; face < 6; face++) {
-      for (let cell = 0; cell < 9; cell++) {
-        if (gameState[face][cell] === null) {
-          gameState[face][cell] = 'X';
-          let moveVal = minimax(gameState, 0, false, -Infinity, Infinity);
-          gameState[face][cell] = null;
-          if (moveVal > bestVal) {
-            bestMove = [face, cell];
-            bestVal = moveVal;
-          }
+      const lines = [
+        [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
+        [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
+        [0, 4, 8], [2, 4, 6]  // Diagonals
+      ];
+
+      for (let line of lines) {
+        const values = line.map(idx => gameState[face][idx]);
+        const XCount = values.filter(v => v === 'X').length;
+        const nullCount = values.filter(v => v === null).length;
+
+        if (XCount === 3) {
+          playerSequences++;
+          completedSequences.push(line.map(idx => ({ face, cell: idx })));
+        }
+
+        if (XCount === 2 && nullCount === 1) {
+          almostCompleteSequence = true;
         }
       }
     }
-    console.log('findBestMove result:', { bestMove });
+
+    if (playerSequences >= 2 && almostCompleteSequence) {
+      bombCells = completedSequences[0]; // Select one of the completed sequences
+      return { useBomb: true, bombCells };
+    }
+    return { useBomb: false, bombCells: [] };
+  };
+
+  const handleBombUsage = (bombCells) => {
+    let cellsToBomb = [...bombCells];
+    bombCells.forEach(({ face, cell }) => {
+      const adjacentCells = getAdjacentCells(face, cell);
+      cellsToBomb = cellsToBomb.concat(adjacentCells.map(([adjFace, adjCell]) => ({ face: adjFace, cell: adjCell })));
+    });
+  
+    let newGameState = gameState.map((board, faceIdx) => {
+      if (cellsToBomb.some(c => c.face === faceIdx)) {
+        const newBoard = [...board];
+        cellsToBomb.filter(c => c.face === faceIdx).forEach(({ cell }) => {
+          newBoard[cell] = null;
+        });
+        return newBoard;
+      }
+      return board;
+    });
+  
+    setGameState(newGameState);
+    setBombUsed({ ...bombUsed, [currentPlayer]: true });
+    setBombMode(false);
+    setBombCells([]);
+    setHighlightedCells([]);
+  
+    const nextPlayer = currentPlayer === 'X' ? 'O' : 'X';
+    setCurrentPlayer(nextPlayer);
+  
+    if (nextPlayer === 'O' && gameMode === 'single') {
+      setTimeout(() => setAiMovePending(true), 500); // Trigger AI move after a delay
+    }
+  };
+  
+
+  const findBestMove = (gameState) => {
+    let bestMove = [-1, -1];
+    for (let depth = 1; depth <= MAX_DEPTH; depth++) {
+      bestMove = findBestMoveAtDepth(gameState, depth);
+    }
     return bestMove;
   };
 
-  const minimax = (gameState, depth, isMaximizing, alpha, beta) => {
-    const { winningPlayer } = checkCubeWin(gameState);
-    if (winningPlayer === 'X') return 100 - depth;
-    if (winningPlayer === 'O') return depth - 100;
-    if (!isMovesLeft(gameState)) return 0;
-    if (depth >= MAX_DEPTH) return evaluateBoard(gameState);
+  const findBestMoveAtDepth = (gameState, maxDepth) => {
+    let bestVal = -Infinity;
+    let bestMove = [-1, -1];
+    const moves = getAllPossibleMoves(gameState);
 
-    if (isMaximizing) {
-      let best = -Infinity;
-      for (let face = 0; face < 6; face++) {
-        for (let cell = 0; cell < 9; cell++) {
-          if (gameState[face][cell] === null) {
-            gameState[face][cell] = 'X';
-            best = Math.max(best, minimax(gameState, depth + 1, false, alpha, beta));
-            gameState[face][cell] = null;
-            alpha = Math.max(alpha, best);
-            if (beta <= alpha) return best;
-          }
-        }
+    for (let [face, cell] of moves) {
+      gameState[face][cell] = 'O';
+      let moveVal = minimax(gameState, 0, false, -Infinity, Infinity, maxDepth);
+      gameState[face][cell] = null;
+      if (moveVal > bestVal) {
+        bestMove = [face, cell];
+        bestVal = moveVal;
       }
-      return best;
-    } else {
-      let best = Infinity;
-      for (let face = 0; face < 6; face++) {
-        for (let cell = 0; cell < 9; cell++) {
-          if (gameState[face][cell] === null) {
-            gameState[face][cell] = 'O';
-            best = Math.min(best, minimax(gameState, depth + 1, true, alpha, beta));
-            gameState[face][cell] = null;
-            beta = Math.min(beta, best);
-            if (beta <= alpha) return best;
-          }
-        }
-      }
-      return best;
     }
+    return bestMove;
   };
 
-  const evaluateBoard = (gameState) => {
+  const getAllPossibleMoves = (gameState) => {
+    const moves = [];
+    for (let face = 0; face < 6; face++) {
+      for (let cell = 0; cell < 9; cell++) {
+        if (gameState[face][cell] === null) {
+          moves.push([face, cell]);
+        }
+      }
+    }
+    // Move ordering: center, corners, edges
+    const scoreCell = (cell) => {
+      if (cell === 4) return 3; // Center
+      if ([0, 2, 6, 8].includes(cell)) return 2; // Corners
+      return 1; // Edges
+    };
+    moves.sort((a, b) => scoreCell(b[1]) - scoreCell(a[1]));
+    return moves;
+  };
+
+  const transpositionTable = new Map();
+
+  const minimax = (gameState, depth, isMaximizing, alpha, beta, maxDepth) => {
+    const stateKey = JSON.stringify(gameState);
+    if (transpositionTable.has(stateKey)) return transpositionTable.get(stateKey);
+
+    const { winningPlayer } = checkCubeWin(gameState);
+    if (winningPlayer === 'O') return 100 - depth;
+    if (winningPlayer === 'X') return depth - 100;
+    if (!isMovesLeft(gameState)) return 0;
+    if (depth >= maxDepth) return evaluateBoard(gameState, depth);
+
+    const moves = getAllPossibleMoves(gameState);
+
+    let best;
+    if (isMaximizing) {
+      best = -Infinity;
+      for (let [face, cell] of moves) {
+        gameState[face][cell] = 'O';
+        best = Math.max(best, minimax(gameState, depth + 1, false, alpha, beta, maxDepth));
+        gameState[face][cell] = null;
+        alpha = Math.max(alpha, best);
+        if (beta <= alpha) break; // Prune remaining branches
+      }
+    } else {
+      best = Infinity;
+      for (let [face, cell] of moves) {
+        gameState[face][cell] = 'X';
+        best = Math.min(best, minimax(gameState, depth + 1, true, alpha, beta, maxDepth));
+        gameState[face][cell] = null;
+        beta = Math.min(beta, best);
+        if (beta <= alpha) break; // Prune remaining branches
+      }
+    }
+
+    transpositionTable.set(stateKey, best);
+    return best;
+  };
+
+  const evaluateBoard = (gameState, depth) => {
     let score = 0;
     const { winningPlayer } = checkCubeWin(gameState);
-    if (winningPlayer === 'X') score += 100;
-    if (winningPlayer === 'O') score -= 100;
-  
+    if (winningPlayer === 'O') return 100 - depth;
+    if (winningPlayer === 'X') return depth - 100;
+
     // Additional heuristic: count potential winning lines for both players
     for (let face = 0; face < 6; face++) {
       const lines = checkFaceWin(gameState[face]);
       lines.forEach(line => {
         const values = line.map(idx => gameState[face][idx]);
-        const XCount = values.filter(v => v === 'X').length;
         const OCount = values.filter(v => v === 'O').length;
-  
+        const XCount = values.filter(v => v === 'X').length;
+
         // Reward AI for lines that are closer to completion
-        if (XCount > 0 && OCount === 0) score += Math.pow(10, XCount);
-        if (OCount > 0 && XCount === 0) score -= Math.pow(10, OCount);
-        
+        if (OCount > 0 && XCount === 0) score += Math.pow(10, OCount);
+        if (XCount > 0 && OCount === 0) score -= Math.pow(10, XCount);
+
         // Strongly penalize potential opponent wins
-        if (OCount === 2 && XCount === 0) score -= 50;
+        if (XCount === 2 && OCount === 0) score -= 1000; // Increase penalty for potential opponent wins
+        if (XCount === 1 && OCount === 0) score -= 10; // Small penalty for potential opponent wins
       });
     }
-  
+
+    // Check for imminent wins and prioritize blocking them
+    for (let face = 0; face < 6; face++) {
+      for (let cell = 0; cell < 9; cell++) {
+        if (gameState[face][cell] === null) {
+          gameState[face][cell] = 'X';
+          if (checkCubeWin(gameState).winningPlayer === 'X') {
+            score -= 10000; // Large negative score to prioritize blocking
+          }
+          gameState[face][cell] = null;
+        }
+      }
+    }
+
     // Prioritize corners, middle edges, and center cells
     const cornerCells = [0, 2, 6, 8];
     const middleEdgeCells = [1, 3, 5, 7];
     const centerCell = [4];
-  
+
     for (let face = 0; face < 6; face++) {
       cornerCells.forEach(cell => {
-        if (gameState[face][cell] === 'X') score += 5;
-        if (gameState[face][cell] === 'O') score -= 5;
+        if (gameState[face][cell] === 'O') score += 5;
+        if (gameState[face][cell] === 'X') score -= 5;
       });
       middleEdgeCells.forEach(cell => {
-        if (gameState[face][cell] === 'X') score += 3;
-        if (gameState[face][cell] === 'O') score -= 3;
+        if (gameState[face][cell] === 'O') score += 3;
+        if (gameState[face][cell] === 'X') score -= 3;
       });
       centerCell.forEach(cell => {
-        if (gameState[face][cell] === 'X') score += 1;
-        if (gameState[face][cell] === 'O') score -= 1;
+        if (gameState[face][cell] === 'O') score += 1;
+        if (gameState[face][cell] === 'X') score -= 1;
       });
     }
-  
+
     return score;
   };
-  
 
   const isMovesLeft = (gameState) => {
     for (let face = 0; face < 6; face++) {
@@ -209,37 +339,37 @@ const App = () => {
   };
 
   const handleBombCellSelection = (face, cell) => {
-    if (bombCells.length >= 3) {
-      setBombMode(false);
+  if (bombCells.length >= 3) {
+    setBombMode(false);
+    setBombCells([]);
+    setHighlightedCells([]);
+    return;
+  }
+
+  const newBombCells = [...bombCells, { face, cell }];
+  const newHighlightedCells = [...highlightedCells, { face, cell }];
+
+  if (isCornerCell(face, cell)) {
+    const adjacentCells = getAdjacentCells(face, cell);
+    adjacentCells.forEach(([adjFace, adjCell]) => {
+      newHighlightedCells.push({ face: adjFace, cell: adjCell });
+    });
+  }
+
+  setBombCells(newBombCells);
+  setHighlightedCells(newHighlightedCells);
+
+  if (newBombCells.length === 3) {
+    if (isValidTriple(newBombCells)) {
+      explodeBomb(newHighlightedCells);
+      handleBombUsage(newBombCells); // Handle the bomb usage immediately after selection
+    } else {
+      alert("Invalid triple selection. Please select a valid triple.");
       setBombCells([]);
       setHighlightedCells([]);
-      return;
     }
-
-    const newBombCells = [...bombCells, { face, cell }];
-    const newHighlightedCells = [...highlightedCells, { face, cell }];
-
-    if (isCornerCell(face, cell)) {
-      const adjacentCells = getAdjacentCells(face, cell);
-      adjacentCells.forEach(([adjFace, adjCell]) => {
-        newHighlightedCells.push({ face: adjFace, cell: adjCell });
-      });
-    }
-
-    setBombCells(newBombCells);
-    setHighlightedCells(newHighlightedCells);
-    console.log(`Selected cells for bombing: ${JSON.stringify(newBombCells)}`);
-
-    if (newBombCells.length === 3) {
-      if (isValidTriple(newBombCells)) {
-        explodeBomb(newHighlightedCells);
-      } else {
-        alert("Invalid triple selection. Please select a valid triple.");
-        setBombCells([]);
-        setHighlightedCells([]);
-      }
-    }
-  };
+  }
+};
 
   const isValidTriple = (cells) => {
     if (cells.length !== 3) return false;
@@ -273,7 +403,12 @@ const App = () => {
     setBombMode(false);
     setBombCells([]);
     setHighlightedCells([]);
-    setCurrentPlayer(currentPlayer === 'X' ? 'O' : 'X');
+
+    if (currentPlayer === 'X' && gameMode === 'single') {
+      setTimeout(() => setAiMovePending(true), 500); // Trigger AI move after a delay
+    } else {
+      setCurrentPlayer(currentPlayer === 'X' ? 'O' : 'X');
+    }
   };
 
   const checkFaceWin = (board) => {
@@ -394,7 +529,7 @@ const App = () => {
 
   const resetGame = () => {
     setGameState(initialState);
-    setCurrentPlayer('X');
+    setCurrentPlayer('O'); // Reset the game with AI starting
     setWinner(null);
     setWinningCells([]);
     setBombUsed({ X: false, O: false });
@@ -402,6 +537,7 @@ const App = () => {
     setBombCells([]);
     setHighlightedCells([]);
     setModalOpen(true); // Open the modal when resetting the game
+    setAiMovePending(true); // Trigger AI move after reset
   };
 
   return (
