@@ -11,30 +11,33 @@ const MAX_DEPTH = 12; // Increase the depth limit
 const App = () => {
   const initialState = Array(6).fill().map(() => Array(9).fill(null));
   const [gameState, setGameState] = useState(initialState);
-  const [currentPlayer, setCurrentPlayer] = useState('O'); // Start with 'O' (AI)
+  const [currentPlayer, setCurrentPlayer] = useState(null); // Start with no player
   const [winner, setWinner] = useState(null);
   const [winningCells, setWinningCells] = useState([]);
   const [bombUsed, setBombUsed] = useState({ X: false, O: false });
   const [bombMode, setBombMode] = useState(false);
   const [bombCells, setBombCells] = useState([]);
   const [highlightedCells, setHighlightedCells] = useState([]);
-  const [gameMode, setGameMode] = useState('single'); // Set default game mode to 'single'
+  const [gameMode, setGameMode] = useState(null); // Set default game mode to null
   const [modalOpen, setModalOpen] = useState(true); // Add state to control modal visibility
-  const [aiMovePending, setAiMovePending] = useState(true); // Flag to trigger AI move immediately
+  const [aiMovePending, setAiMovePending] = useState(false); // Flag to trigger AI move immediately
   const [bombPending, setBombPending] = useState(false); // Flag to trigger bomb usage
 
   const handleModalClose = (mode) => {
     console.log('Game mode selected:', mode);
     setGameMode(mode);
     setModalOpen(false);
-    if (mode === 'single' && currentPlayer === 'O') {
+    if (mode === 'single') {
+      setCurrentPlayer('O'); // AI starts in single player mode
       setAiMovePending(true); // Trigger AI move if it's the computer's turn
+    } else {
+      setCurrentPlayer('X'); // Player X starts in multiplayer mode
     }
   };
 
   useEffect(() => {
     console.log('useEffect triggered', { gameMode, currentPlayer, winner });
-    if (aiMovePending) {
+    if (aiMovePending && currentPlayer === 'O') {
       console.log('AI is making a move');
       const bombDecision = shouldUseBomb(gameState);
       if (bombDecision.useBomb) {
@@ -47,7 +50,7 @@ const App = () => {
         setAiMovePending(false); // Reset the flag after AI makes its move
       }
     }
-  }, [aiMovePending]);
+  }, [aiMovePending, currentPlayer, gameState]);
 
   useEffect(() => {
     if (bombPending) {
@@ -58,7 +61,6 @@ const App = () => {
       setCurrentPlayer('X'); // Switch back to player's turn after AI uses bomb
     }
   }, [bombPending]);
-  
 
   const handleCellClick = (face, cell) => {
     if (bombMode) {
@@ -153,7 +155,7 @@ const App = () => {
       const adjacentCells = getAdjacentCells(face, cell);
       cellsToBomb = cellsToBomb.concat(adjacentCells.map(([adjFace, adjCell]) => ({ face: adjFace, cell: adjCell })));
     });
-  
+
     let newGameState = gameState.map((board, faceIdx) => {
       if (cellsToBomb.some(c => c.face === faceIdx)) {
         const newBoard = [...board];
@@ -164,21 +166,20 @@ const App = () => {
       }
       return board;
     });
-  
+
     setGameState(newGameState);
     setBombUsed({ ...bombUsed, [currentPlayer]: true });
     setBombMode(false);
     setBombCells([]);
     setHighlightedCells([]);
-  
+
     const nextPlayer = currentPlayer === 'X' ? 'O' : 'X';
     setCurrentPlayer(nextPlayer);
-  
+
     if (nextPlayer === 'O' && gameMode === 'single') {
       setTimeout(() => setAiMovePending(true), 500); // Trigger AI move after a delay
     }
   };
-  
 
   const findBestMove = (gameState) => {
     let bestMove = [-1, -1];
@@ -339,37 +340,37 @@ const App = () => {
   };
 
   const handleBombCellSelection = (face, cell) => {
-  if (bombCells.length >= 3) {
-    setBombMode(false);
-    setBombCells([]);
-    setHighlightedCells([]);
-    return;
-  }
-
-  const newBombCells = [...bombCells, { face, cell }];
-  const newHighlightedCells = [...highlightedCells, { face, cell }];
-
-  if (isCornerCell(face, cell)) {
-    const adjacentCells = getAdjacentCells(face, cell);
-    adjacentCells.forEach(([adjFace, adjCell]) => {
-      newHighlightedCells.push({ face: adjFace, cell: adjCell });
-    });
-  }
-
-  setBombCells(newBombCells);
-  setHighlightedCells(newHighlightedCells);
-
-  if (newBombCells.length === 3) {
-    if (isValidTriple(newBombCells)) {
-      explodeBomb(newHighlightedCells);
-      handleBombUsage(newBombCells); // Handle the bomb usage immediately after selection
-    } else {
-      alert("Invalid triple selection. Please select a valid triple.");
+    if (bombCells.length >= 3) {
+      setBombMode(false);
       setBombCells([]);
       setHighlightedCells([]);
+      return;
     }
-  }
-};
+
+    const newBombCells = [...bombCells, { face, cell }];
+    const newHighlightedCells = [...highlightedCells, { face, cell }];
+
+    if (isCornerCell(face, cell)) {
+      const adjacentCells = getAdjacentCells(face, cell);
+      adjacentCells.forEach(([adjFace, adjCell]) => {
+        newHighlightedCells.push({ face: adjFace, cell: adjCell });
+      });
+    }
+
+    setBombCells(newBombCells);
+    setHighlightedCells(newHighlightedCells);
+
+    if (newBombCells.length === 3) {
+      if (isValidTriple(newBombCells)) {
+        explodeBomb(newHighlightedCells);
+        handleBombUsage(newBombCells); // Handle the bomb usage immediately after selection
+      } else {
+        alert("Invalid triple selection. Please select a valid triple.");
+        setBombCells([]);
+        setHighlightedCells([]);
+      }
+    }
+  };
 
   const isValidTriple = (cells) => {
     if (cells.length !== 3) return false;
@@ -529,7 +530,7 @@ const App = () => {
 
   const resetGame = () => {
     setGameState(initialState);
-    setCurrentPlayer('O'); // Reset the game with AI starting
+    setCurrentPlayer(null); // Reset the game with no player
     setWinner(null);
     setWinningCells([]);
     setBombUsed({ X: false, O: false });
@@ -537,7 +538,13 @@ const App = () => {
     setBombCells([]);
     setHighlightedCells([]);
     setModalOpen(true); // Open the modal when resetting the game
-    setAiMovePending(true); // Trigger AI move after reset
+    setAiMovePending(false); // Reset AI move pending flag
+  };
+
+  const getCurrentPlayerText = () => {
+    if (currentPlayer === 'X') return "Red's turn";
+    if (currentPlayer === 'O') return "Blue's turn";
+    return null;
   };
 
   return (
@@ -547,15 +554,22 @@ const App = () => {
         handleClose={handleModalClose}
         setGameMode={setGameMode}
       />
-      <button onClick={resetGame}>Reset Game</button>
-      {winner && <div style={{ position: 'absolute', top: '10%', left: '50%', transform: 'translateX(-50%)', fontSize: '2rem', color: 'red' }}>Player {winner} wins!</div>}
-      <div style={{ position: 'absolute', top: '10%', right: '10%', cursor: 'pointer', zIndex: 1 }}>
+      <div style={{ position: 'absolute', top: '1%', left: '50%', transform: 'translateX(-50%)' }}>
+        <button onClick={resetGame} style={{ backgroundColor: '#edebeb', fontSize: '1.2rem', padding: '10px 20px', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
+          Reset Game
+        </button>
+      </div>
+      {winner && <div style={{ position: 'absolute', top: '12%', left: '50%', transform: 'translateX(-50%)', fontSize: '2rem', color: 'red'}}>Player {winner} wins!</div>}
+      {currentPlayer && <div style={{ backgroundColor: '#edebeb',position: 'absolute', top: '7%', left: '50%', transform: 'translateX(-50%)', fontSize: '2rem', borderRadius: '5px',padding: '8px 17px',color: 'black', fontWeight:'bold', fontFamily:'calibri' }}>{getCurrentPlayerText()}</div>}
+      <div style={{ position: 'absolute', top: '10%', left: '10%', cursor: 'pointer', zIndex: 1, textAlign: 'center' }}>
+        <div style={{color:'red', fontSize: '1.5em', fontWeight:'bold'}}>Red's Bomb</div>
         {bombUsed['X'] ? null : <img src={bombIcon} alt="Bomb Icon X" style={{ width: 50, height: 50 }} onClick={() => { if (currentPlayer === 'X') handleBombClick(); }} />}
       </div>
-      <div style={{ position: 'absolute', top: '10%', right: '20%', cursor: 'pointer', zIndex: 1 }}>
+      <div style={{ position: 'absolute', top: '10%', right: '10%', cursor: 'pointer', zIndex: 1, textAlign: 'center' }}>
+        <div style={{color:'blue', fontSize: '1.5em', fontWeight:'bold'}}>Blue's Bomb</div>
         {bombUsed['O'] ? null : <img src={bombIcon} alt="Bomb Icon O" style={{ width: 50, height: 50 }} onClick={() => { if (currentPlayer === 'O') handleBombClick(); }} />}
       </div>
-      <Canvas style={{ height: '100vh' }}>
+      <Canvas style={{ height: '100vh', marginTop:'5em' }}>
         <ambientLight intensity={0.5} />
         <pointLight position={[10, 10, 10]} />
         <group>
