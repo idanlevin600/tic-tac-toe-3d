@@ -244,7 +244,8 @@ const App = () => {
       best = -Infinity;
       for (let [face, cell] of moves) {
         gameState[face][cell] = 'O';
-        best = Math.max(best, minimax(gameState, depth + 1, false, alpha, beta, maxDepth));
+        best = Math.max(best, minimax(gameState, depth + 1, false, 
+                                      alpha, beta, maxDepth));
         gameState[face][cell] = null;
         alpha = Math.max(alpha, best);
         if (beta <= alpha) break; // Prune remaining branches
@@ -253,7 +254,8 @@ const App = () => {
       best = Infinity;
       for (let [face, cell] of moves) {
         gameState[face][cell] = 'X';
-        best = Math.min(best, minimax(gameState, depth + 1, true, alpha, beta, maxDepth));
+        best = Math.min(best, minimax(gameState, depth + 1, true, 
+                                      alpha, beta, maxDepth));
         gameState[face][cell] = null;
         beta = Math.min(beta, best);
         if (beta <= alpha) break; // Prune remaining branches
@@ -542,8 +544,8 @@ const App = () => {
   };
 
   const getCurrentPlayerText = () => {
-    if (currentPlayer === 'X') return "Red's turn";
-    if (currentPlayer === 'O') return "Blue's turn";
+    if (currentPlayer === 'X') return "Purple's turn";
+    if (currentPlayer === 'O') return "Green's turn";
     return null;
   };
 
@@ -555,18 +557,18 @@ const App = () => {
         setGameMode={setGameMode}
       />
       <div style={{ position: 'absolute', top: '1%', left: '50%', transform: 'translateX(-50%)' }}>
-        <button onClick={resetGame} style={{ backgroundColor: '#edebeb', fontSize: '1.2rem', padding: '10px 20px', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
+        <button onClick={resetGame} style={{ backgroundColor: '#ff64ab', fontSize: '1.2rem', padding: '10px 20px', border: 'none', borderRadius: '5px', cursor: 'pointer', color:'white', fontWeight:'bold' }}>
           Reset Game
         </button>
       </div>
-      {winner && <div style={{ position: 'absolute', top: '12%', left: '50%', transform: 'translateX(-50%)', fontSize: '2rem', color: 'red'}}>Player {winner} wins!</div>}
-      {currentPlayer && <div style={{ backgroundColor: '#edebeb',position: 'absolute', top: '7%', left: '50%', transform: 'translateX(-50%)', fontSize: '2rem', borderRadius: '5px',padding: '8px 17px',color: 'black', fontWeight:'bold', fontFamily:'calibri' }}>{getCurrentPlayerText()}</div>}
+      {winner && <div style={{ position: 'absolute', top: '12%', left: '50%', transform: 'translateX(-50%)', fontSize: '6rem', color: '#6bc9ff', fontWeight:'bold'}}>Player {winner} wins!</div>}
+      {currentPlayer && <div style={{ backgroundColor: '#ffba46',position: 'absolute', top: '7%', left: '50%', transform: 'translateX(-50%)', fontSize: '2rem', borderRadius: '5px',padding: '8px 17px',color: 'white', fontWeight:'bold', fontFamily:'calibri' }}>{getCurrentPlayerText()}</div>}
       <div style={{ position: 'absolute', top: '10%', left: '10%', cursor: 'pointer', zIndex: 1, textAlign: 'center' }}>
-        <div style={{color:'red', fontSize: '1.5em', fontWeight:'bold'}}>Red's Bomb</div>
+        <div style={{color:'#9a8eff', fontSize: '1.5em', fontWeight:'bold'}}>Purple's Bomb</div>
         {bombUsed['X'] ? null : <img src={bombIcon} alt="Bomb Icon X" style={{ width: 50, height: 50 }} onClick={() => { if (currentPlayer === 'X') handleBombClick(); }} />}
       </div>
       <div style={{ position: 'absolute', top: '10%', right: '10%', cursor: 'pointer', zIndex: 1, textAlign: 'center' }}>
-        <div style={{color:'blue', fontSize: '1.5em', fontWeight:'bold'}}>Blue's Bomb</div>
+        <div style={{color:'#00ffc1', fontSize: '1.5em', fontWeight:'bold'}}>Green's Bomb</div>
         {bombUsed['O'] ? null : <img src={bombIcon} alt="Bomb Icon O" style={{ width: 50, height: 50 }} onClick={() => { if (currentPlayer === 'O') handleBombClick(); }} />}
       </div>
       <Canvas style={{ height: '100vh', marginTop:'5em' }}>
