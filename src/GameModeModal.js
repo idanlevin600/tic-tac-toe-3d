@@ -1,6 +1,7 @@
 import React from 'react';
 import { Modal, Box, Typography, Button } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import { red } from '@mui/material/colors';
 
 const ModalBox = styled(Box)(({ theme }) => ({
   position: 'absolute',
@@ -8,12 +9,14 @@ const ModalBox = styled(Box)(({ theme }) => ({
   left: '50%',
   transform: 'translate(-50%, -50%)',
   width: 400,
-  backgroundColor: theme.palette.background.paper,
-  border: '2px solid #000',
+  color: 'white',
+  fontWeight:"bold", 
+  backgroundColor: "#ffba46",
+  border: '5px solid white',
   boxShadow: 24,
   padding: theme.spacing(2, 4, 3),
   textAlign: 'center',
-  borderRadius: theme.shape.borderRadius * 2, // Added for rounded corners
+  borderRadius: theme.shape.borderRadius * 7, // Added for rounded corners
 }));
 
 const GameModeModal = ({ open, handleClose, setGameMode }) => {
@@ -36,7 +39,7 @@ const GameModeModal = ({ open, handleClose, setGameMode }) => {
         <Button
           variant="contained"
           color="primary"
-          style={{ margin: '10px' }}
+          style={{ margin: '10px' , fontWeight:'bold' , backgroundColor:"#00ffc1"}}
           onClick={() => handleModeSelection('single')}
         >
           Single Player
@@ -44,7 +47,7 @@ const GameModeModal = ({ open, handleClose, setGameMode }) => {
         <Button
           variant="contained"
           color="secondary"
-          style={{ margin: '10px' }}
+          style={{ margin: '10px' , fontWeight:'bold' , backgroundColor:"#9a8eff"}}
           onClick={() => handleModeSelection('multi')}
         >
           Multiplayer

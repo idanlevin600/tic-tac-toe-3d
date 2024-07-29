@@ -557,12 +557,12 @@ const App = () => {
         setGameMode={setGameMode}
       />
       <div style={{ position: 'absolute', top: '1%', left: '50%', transform: 'translateX(-50%)' }}>
-        <button onClick={resetGame} style={{ backgroundColor: '#ff64ab', fontSize: '1.2rem', padding: '10px 20px', border: 'none', borderRadius: '5px', cursor: 'pointer', color:'white', fontWeight:'bold' }}>
+        <button onClick={resetGame} style={{ backgroundColor: '#ff64ab', fontSize: '1rem', padding: '10px 20px', border: 'none', borderRadius: '10px', cursor: 'pointer', color:'white', fontWeight:'bold'  }}>
           Reset Game
         </button>
       </div>
       {winner && <div style={{ position: 'absolute', top: '12%', left: '50%', transform: 'translateX(-50%)', fontSize: '6rem', color: '#6bc9ff', fontWeight:'bold'}}>Player {winner} wins!</div>}
-      {currentPlayer && <div style={{ backgroundColor: '#ffba46',position: 'absolute', top: '7%', left: '50%', transform: 'translateX(-50%)', fontSize: '2rem', borderRadius: '5px',padding: '8px 17px',color: 'white', fontWeight:'bold', fontFamily:'calibri' }}>{getCurrentPlayerText()}</div>}
+      {currentPlayer && <div style={{ backgroundColor: '#ffba46',position: 'absolute', top: '12%', left: '50%', transform: 'translateX(-50%)', fontSize: '2.8rem', borderRadius: '20px',padding: '8px 17px',color: 'white', fontWeight:'bold', fontFamily:'calibri' }}>{getCurrentPlayerText()}</div>}
       <div style={{ position: 'absolute', top: '10%', left: '10%', cursor: 'pointer', zIndex: 1, textAlign: 'center' }}>
         <div style={{color:'#9a8eff', fontSize: '1.5em', fontWeight:'bold'}}>Purple's Bomb</div>
         {bombUsed['X'] ? null : <img src={bombIcon} alt="Bomb Icon X" style={{ width: 50, height: 50 }} onClick={() => { if (currentPlayer === 'X') handleBombClick(); }} />}
