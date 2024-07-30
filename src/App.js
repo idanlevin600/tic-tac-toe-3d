@@ -647,8 +647,8 @@ const App = () => {
   };
 
   const getCurrentPlayerText = () => {
-    if (currentPlayer === "X") return "Purple's turn";
-    if (currentPlayer === "O") return "Green's turn";
+    if (currentPlayer === "X") return "Your turn";
+    if (currentPlayer === "O") return "Computer's turn";
     return null;
   };
 
@@ -695,7 +695,6 @@ const App = () => {
             fontWeight: "bold",
           }}
         >
-          {" "}
           {winner === "X" ? "You" : "The computer"} win!
         </div>
       )}
@@ -731,7 +730,7 @@ const App = () => {
         <div
           style={{ color: "#9a8eff", fontSize: "1.5em", fontWeight: "bold" }}
         >
-          Purple's Bomb
+          Your Bomb
         </div>
         {bombUsed["X"] ? null : (
           <img
@@ -757,7 +756,7 @@ const App = () => {
         <div
           style={{ color: "#00ffc1", fontSize: "1.5em", fontWeight: "bold" }}
         >
-          Green's Bomb
+          Computer's Bomb
         </div>
         {bombUsed["O"] ? null : (
           <img
