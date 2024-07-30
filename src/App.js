@@ -1,15 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { Canvas } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
-import TicTacToeBoard from './TicTacToeBoard';
-import RaycasterHandler from './RaycasterHandler';
-import bombIcon from './bomb.png'; // Make sure the path to the bomb image is correct
-import GameModeModal from './GameModeModal'; // Import the new modal component
+import React, { useState, useEffect } from "react";
+import { Canvas } from "@react-three/fiber";
+import { OrbitControls } from "@react-three/drei";
+import TicTacToeBoard from "./TicTacToeBoard";
+import RaycasterHandler from "./RaycasterHandler";
+import bombIcon from "./bomb.png"; // Make sure the path to the bomb image is correct
+import GameModeModal from "./GameModeModal"; // Import the new modal component
 
 const MAX_DEPTH = 12; // Increase the depth limit
 
 const App = () => {
-  const initialState = Array(6).fill().map(() => Array(9).fill(null));
+  const initialState = Array(6)
+    .fill()
+    .map(() => Array(9).fill(null));
   const [gameState, setGameState] = useState(initialState);
   const [currentPlayer, setCurrentPlayer] = useState(null); // Start with no player
   const [winner, setWinner] = useState(null);
@@ -24,28 +26,28 @@ const App = () => {
   const [bombPending, setBombPending] = useState(false); // Flag to trigger bomb usage
 
   const handleModalClose = (mode) => {
-    console.log('Game mode selected:', mode);
+    console.log("Game mode selected:", mode);
     setGameMode(mode);
     setModalOpen(false);
-    if (mode === 'single') {
-      setCurrentPlayer('O'); // AI starts in single player mode
+    if (mode === "single") {
+      setCurrentPlayer("O"); // AI starts in single player mode
       setAiMovePending(true); // Trigger AI move if it's the computer's turn
     } else {
-      setCurrentPlayer('X'); // Player X starts in multiplayer mode
+      setCurrentPlayer("X"); // Player X starts in multiplayer mode
     }
   };
 
   useEffect(() => {
-    console.log('useEffect triggered', { gameMode, currentPlayer, winner });
-    if (aiMovePending && currentPlayer === 'O') {
-      console.log('AI is making a move');
+    console.log("useEffect triggered", { gameMode, currentPlayer, winner });
+    if (aiMovePending && currentPlayer === "O") {
+      console.log("AI is making a move");
       const bombDecision = shouldUseBomb(gameState);
       if (bombDecision.useBomb) {
         alert("AI wants to use the bomb!");
         setBombPending(true);
       } else {
         const [bestFace, bestCell] = findBestMove(gameState);
-        console.log('Best move found by AI:', { bestFace, bestCell });
+        console.log("Best move found by AI:", { bestFace, bestCell });
         setTimeout(() => handleCellClick(bestFace, bestCell), 500); // Small delay to simulate thinking
         setAiMovePending(false); // Reset the flag after AI makes its move
       }
@@ -58,7 +60,7 @@ const App = () => {
       handleBombUsage(bombDecision.bombCells);
       setBombPending(false);
       setAiMovePending(false);
-      setCurrentPlayer('X'); // Switch back to player's turn after AI uses bomb
+      setCurrentPlayer("X"); // Switch back to player's turn after AI uses bomb
     }
   }, [bombPending]);
 
@@ -68,7 +70,7 @@ const App = () => {
       return;
     }
 
-    console.log('handleCellClick triggered', { face, cell, currentPlayer });
+    console.log("handleCellClick triggered", { face, cell, currentPlayer });
     if (winner || gameState[face][cell] !== null) return;
 
     let newGameState = gameState.map((board, idx) => {
@@ -100,19 +102,19 @@ const App = () => {
     if (winningPlayer) {
       setWinner(winningPlayer);
       setWinningCells(winningCells);
-      console.log('Winner found:', winningPlayer);
+      console.log("Winner found:", winningPlayer);
     } else {
-      if (currentPlayer === 'X' && gameMode === 'single') {
-        setCurrentPlayer('O');
+      if (currentPlayer === "X" && gameMode === "single") {
+        setCurrentPlayer("O");
         setTimeout(() => setAiMovePending(true), 500); // Trigger AI move after a delay
       } else {
-        setCurrentPlayer(currentPlayer === 'X' ? 'O' : 'X');
+        setCurrentPlayer(currentPlayer === "X" ? "O" : "X");
       }
     }
   };
 
   const shouldUseBomb = (gameState) => {
-    if (bombUsed['O']) return { useBomb: false, bombCells: [] };
+    if (bombUsed["O"]) return { useBomb: false, bombCells: [] };
 
     let playerSequences = 0;
     let almostCompleteSequence = false;
@@ -121,19 +123,24 @@ const App = () => {
 
     for (let face = 0; face < 6; face++) {
       const lines = [
-        [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
-        [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
-        [0, 4, 8], [2, 4, 6]  // Diagonals
+        [0, 1, 2],
+        [3, 4, 5],
+        [6, 7, 8], // Rows
+        [0, 3, 6],
+        [1, 4, 7],
+        [2, 5, 8], // Columns
+        [0, 4, 8],
+        [2, 4, 6], // Diagonals
       ];
 
       for (let line of lines) {
-        const values = line.map(idx => gameState[face][idx]);
-        const XCount = values.filter(v => v === 'X').length;
-        const nullCount = values.filter(v => v === null).length;
+        const values = line.map((idx) => gameState[face][idx]);
+        const XCount = values.filter((v) => v === "X").length;
+        const nullCount = values.filter((v) => v === null).length;
 
         if (XCount === 3) {
           playerSequences++;
-          completedSequences.push(line.map(idx => ({ face, cell: idx })));
+          completedSequences.push(line.map((idx) => ({ face, cell: idx })));
         }
 
         if (XCount === 2 && nullCount === 1) {
@@ -153,15 +160,22 @@ const App = () => {
     let cellsToBomb = [...bombCells];
     bombCells.forEach(({ face, cell }) => {
       const adjacentCells = getAdjacentCells(face, cell);
-      cellsToBomb = cellsToBomb.concat(adjacentCells.map(([adjFace, adjCell]) => ({ face: adjFace, cell: adjCell })));
+      cellsToBomb = cellsToBomb.concat(
+        adjacentCells.map(([adjFace, adjCell]) => ({
+          face: adjFace,
+          cell: adjCell,
+        }))
+      );
     });
 
     let newGameState = gameState.map((board, faceIdx) => {
-      if (cellsToBomb.some(c => c.face === faceIdx)) {
+      if (cellsToBomb.some((c) => c.face === faceIdx)) {
         const newBoard = [...board];
-        cellsToBomb.filter(c => c.face === faceIdx).forEach(({ cell }) => {
-          newBoard[cell] = null;
-        });
+        cellsToBomb
+          .filter((c) => c.face === faceIdx)
+          .forEach(({ cell }) => {
+            newBoard[cell] = null;
+          });
         return newBoard;
       }
       return board;
@@ -173,10 +187,10 @@ const App = () => {
     setBombCells([]);
     setHighlightedCells([]);
 
-    const nextPlayer = currentPlayer === 'X' ? 'O' : 'X';
+    const nextPlayer = currentPlayer === "X" ? "O" : "X";
     setCurrentPlayer(nextPlayer);
 
-    if (nextPlayer === 'O' && gameMode === 'single') {
+    if (nextPlayer === "O" && gameMode === "single") {
       setTimeout(() => setAiMovePending(true), 500); // Trigger AI move after a delay
     }
   };
@@ -195,7 +209,7 @@ const App = () => {
     const moves = getAllPossibleMoves(gameState);
 
     for (let [face, cell] of moves) {
-      gameState[face][cell] = 'O';
+      gameState[face][cell] = "O";
       let moveVal = minimax(gameState, 0, false, -Infinity, Infinity, maxDepth);
       gameState[face][cell] = null;
       if (moveVal > bestVal) {
@@ -229,11 +243,12 @@ const App = () => {
 
   const minimax = (gameState, depth, isMaximizing, alpha, beta, maxDepth) => {
     const stateKey = JSON.stringify(gameState);
-    if (transpositionTable.has(stateKey)) return transpositionTable.get(stateKey);
+    if (transpositionTable.has(stateKey))
+      return transpositionTable.get(stateKey);
 
     const { winningPlayer } = checkCubeWin(gameState);
-    if (winningPlayer === 'O') return 100 - depth;
-    if (winningPlayer === 'X') return depth - 100;
+    if (winningPlayer === "O") return 100 - depth;
+    if (winningPlayer === "X") return depth - 100;
     if (!isMovesLeft(gameState)) return 0;
     if (depth >= maxDepth) return evaluateBoard(gameState, depth);
 
@@ -243,9 +258,11 @@ const App = () => {
     if (isMaximizing) {
       best = -Infinity;
       for (let [face, cell] of moves) {
-        gameState[face][cell] = 'O';
-        best = Math.max(best, minimax(gameState, depth + 1, false, 
-                                      alpha, beta, maxDepth));
+        gameState[face][cell] = "O";
+        best = Math.max(
+          best,
+          minimax(gameState, depth + 1, false, alpha, beta, maxDepth)
+        );
         gameState[face][cell] = null;
         alpha = Math.max(alpha, best);
         if (beta <= alpha) break; // Prune remaining branches
@@ -253,9 +270,11 @@ const App = () => {
     } else {
       best = Infinity;
       for (let [face, cell] of moves) {
-        gameState[face][cell] = 'X';
-        best = Math.min(best, minimax(gameState, depth + 1, true, 
-                                      alpha, beta, maxDepth));
+        gameState[face][cell] = "X";
+        best = Math.min(
+          best,
+          minimax(gameState, depth + 1, true, alpha, beta, maxDepth)
+        );
         gameState[face][cell] = null;
         beta = Math.min(beta, best);
         if (beta <= alpha) break; // Prune remaining branches
@@ -269,16 +288,16 @@ const App = () => {
   const evaluateBoard = (gameState, depth) => {
     let score = 0;
     const { winningPlayer } = checkCubeWin(gameState);
-    if (winningPlayer === 'O') return 100 - depth;
-    if (winningPlayer === 'X') return depth - 100;
+    if (winningPlayer === "O") return 100 - depth;
+    if (winningPlayer === "X") return depth - 100;
 
     // Additional heuristic: count potential winning lines for both players
     for (let face = 0; face < 6; face++) {
       const lines = checkFaceWin(gameState[face]);
-      lines.forEach(line => {
-        const values = line.map(idx => gameState[face][idx]);
-        const OCount = values.filter(v => v === 'O').length;
-        const XCount = values.filter(v => v === 'X').length;
+      lines.forEach((line) => {
+        const values = line.map((idx) => gameState[face][idx]);
+        const OCount = values.filter((v) => v === "O").length;
+        const XCount = values.filter((v) => v === "X").length;
 
         // Reward AI for lines that are closer to completion
         if (OCount > 0 && XCount === 0) score += Math.pow(10, OCount);
@@ -294,8 +313,8 @@ const App = () => {
     for (let face = 0; face < 6; face++) {
       for (let cell = 0; cell < 9; cell++) {
         if (gameState[face][cell] === null) {
-          gameState[face][cell] = 'X';
-          if (checkCubeWin(gameState).winningPlayer === 'X') {
+          gameState[face][cell] = "X";
+          if (checkCubeWin(gameState).winningPlayer === "X") {
             score -= 10000; // Large negative score to prioritize blocking
           }
           gameState[face][cell] = null;
@@ -309,17 +328,17 @@ const App = () => {
     const centerCell = [4];
 
     for (let face = 0; face < 6; face++) {
-      cornerCells.forEach(cell => {
-        if (gameState[face][cell] === 'O') score += 5;
-        if (gameState[face][cell] === 'X') score -= 5;
+      cornerCells.forEach((cell) => {
+        if (gameState[face][cell] === "O") score += 5;
+        if (gameState[face][cell] === "X") score -= 5;
       });
-      middleEdgeCells.forEach(cell => {
-        if (gameState[face][cell] === 'O') score += 3;
-        if (gameState[face][cell] === 'X') score -= 3;
+      middleEdgeCells.forEach((cell) => {
+        if (gameState[face][cell] === "O") score += 3;
+        if (gameState[face][cell] === "X") score -= 3;
       });
-      centerCell.forEach(cell => {
-        if (gameState[face][cell] === 'O') score += 1;
-        if (gameState[face][cell] === 'X') score -= 1;
+      centerCell.forEach((cell) => {
+        if (gameState[face][cell] === "O") score += 1;
+        if (gameState[face][cell] === "X") score -= 1;
       });
     }
 
@@ -376,26 +395,33 @@ const App = () => {
 
   const isValidTriple = (cells) => {
     if (cells.length !== 3) return false;
-    const faces = cells.map(c => c.face);
-    const positions = cells.map(c => c.cell);
+    const faces = cells.map((c) => c.face);
+    const positions = cells.map((c) => c.cell);
     const uniqueFaces = new Set(faces);
     if (uniqueFaces.size !== 1) return false;
     const face = faces[0];
     const lines = [
-      [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
-      [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
-      [0, 4, 8], [2, 4, 6]  // Diagonals
+      [0, 1, 2],
+      [3, 4, 5],
+      [6, 7, 8], // Rows
+      [0, 3, 6],
+      [1, 4, 7],
+      [2, 5, 8], // Columns
+      [0, 4, 8],
+      [2, 4, 6], // Diagonals
     ];
-    return lines.some(line => line.every(pos => positions.includes(pos)));
+    return lines.some((line) => line.every((pos) => positions.includes(pos)));
   };
 
   const explodeBomb = (cells) => {
     let newGameState = gameState.map((board, faceIdx) => {
-      if (cells.some(c => c.face === faceIdx)) {
+      if (cells.some((c) => c.face === faceIdx)) {
         const newBoard = [...board];
-        cells.filter(c => c.face === faceIdx).forEach(({ cell }) => {
-          newBoard[cell] = null;
-        });
+        cells
+          .filter((c) => c.face === faceIdx)
+          .forEach(({ cell }) => {
+            newBoard[cell] = null;
+          });
         return newBoard;
       }
       return board;
@@ -407,21 +433,26 @@ const App = () => {
     setBombCells([]);
     setHighlightedCells([]);
 
-    if (currentPlayer === 'X' && gameMode === 'single') {
+    if (currentPlayer === "X" && gameMode === "single") {
       setTimeout(() => setAiMovePending(true), 500); // Trigger AI move after a delay
     } else {
-      setCurrentPlayer(currentPlayer === 'X' ? 'O' : 'X');
+      setCurrentPlayer(currentPlayer === "X" ? "O" : "X");
     }
   };
 
   const checkFaceWin = (board) => {
     const lines = [
       // Rows
-      [0, 1, 2], [3, 4, 5], [6, 7, 8],
+      [0, 1, 2],
+      [3, 4, 5],
+      [6, 7, 8],
       // Columns
-      [0, 3, 6], [1, 4, 7], [2, 5, 8],
+      [0, 3, 6],
+      [1, 4, 7],
+      [2, 5, 8],
       // Diagonals
-      [0, 4, 8], [2, 4, 6]
+      [0, 4, 8],
+      [2, 4, 6],
     ];
 
     const triples = [];
@@ -443,22 +474,22 @@ const App = () => {
 
     for (let face = 0; face < 6; face++) {
       const triples = checkFaceWin(gameState[face]);
-      triples.forEach(line => {
-        if (gameState[face][line[0]] === 'X') {
+      triples.forEach((line) => {
+        if (gameState[face][line[0]] === "X") {
           triplesX++;
-          winningCellsX.push(...line.map(cell => ({ face, cell })));
-        } else if (gameState[face][line[0]] === 'O') {
+          winningCellsX.push(...line.map((cell) => ({ face, cell })));
+        } else if (gameState[face][line[0]] === "O") {
           triplesO++;
-          winningCellsO.push(...line.map(cell => ({ face, cell })));
+          winningCellsO.push(...line.map((cell) => ({ face, cell })));
         }
       });
     }
 
     if (triplesX >= 3) {
-      return { winningPlayer: 'X', winningCells: winningCellsX };
+      return { winningPlayer: "X", winningCells: winningCellsX };
     }
     if (triplesO >= 3) {
-      return { winningPlayer: 'O', winningCells: winningCellsO };
+      return { winningPlayer: "O", winningCells: winningCellsO };
     }
 
     return { winningPlayer: null, winningCells: [] };
@@ -478,54 +509,126 @@ const App = () => {
 
   const getAdjacentCells = (face, cell) => {
     const adjacentMap = {
-      '0-0': [[4, 6], [3, 2]],
-      '0-1': [[4, 7]],
-      '0-2': [[4, 8], [2, 0]],
-      '0-3': [[3, 5]],
-      '0-5': [[2, 3]],
-      '0-6': [[5, 0], [3, 8]],
-      '0-7': [[5, 1]],
-      '0-8': [[5, 2], [2, 6]],
-      '1-0': [[2, 2], [4, 2]],
-      '1-1': [[4, 1]],
-      '1-2': [[4, 0], [3, 0]],
-      '1-3': [[2, 5]],
-      '1-5': [[3, 3]],
-      '1-6': [[2, 8], [5, 8]],
-      '1-7': [[5, 7]],
-      '1-8': [[5, 6], [3, 6]],
-      '2-0': [[4, 8], [0, 2]],
-      '2-1': [[4, 5]],
-      '2-2': [[1, 0], [4, 2]],
-      '2-3': [[0, 5]],
-      '2-5': [[1, 3]],
-      '2-6': [[5, 2], [0, 8]],
-      '2-7': [[5, 5]],
-      '2-8': [[1, 6], [5, 8]],
-      '3-0': [[4, 0], [1, 2]],
-      '3-1': [[4, 3]],
-      '3-2': [[0, 0], [4, 6]],
-      '3-3': [[1, 5]],
-      '3-5': [[0, 3]],
-      '3-6': [[5, 6], [1, 8]],
-      '3-7': [[5, 3]],
-      '3-8': [[0, 6], [5, 0]],
-      '4-0': [[3, 0], [1, 2]],
-      '4-1': [[1, 1]],
-      '4-2': [[2, 2], [1, 0]],
-      '4-3': [[3, 1]],
-      '4-5': [[2, 1]],
-      '4-6': [[0, 0], [3, 2]],
-      '4-7': [[0, 1]],
-      '4-8': [[0, 2], [2, 0]],
-      '5-0': [[0, 6], [3, 8]],
-      '5-1': [[0, 7]],
-      '5-2': [[2, 6], [0, 8]],
-      '5-3': [[3, 7]],
-      '5-5': [[2, 7]],
-      '5-6': [[1, 8], [3, 6]],
-      '5-7': [[1, 7]],
-      '5-8': [[2, 8], [1, 6]],
+      "0-0": [
+        [4, 6],
+        [3, 2],
+      ],
+      "0-1": [[4, 7]],
+      "0-2": [
+        [4, 8],
+        [2, 0],
+      ],
+      "0-3": [[3, 5]],
+      "0-5": [[2, 3]],
+      "0-6": [
+        [5, 0],
+        [3, 8],
+      ],
+      "0-7": [[5, 1]],
+      "0-8": [
+        [5, 2],
+        [2, 6],
+      ],
+      "1-0": [
+        [2, 2],
+        [4, 2],
+      ],
+      "1-1": [[4, 1]],
+      "1-2": [
+        [4, 0],
+        [3, 0],
+      ],
+      "1-3": [[2, 5]],
+      "1-5": [[3, 3]],
+      "1-6": [
+        [2, 8],
+        [5, 8],
+      ],
+      "1-7": [[5, 7]],
+      "1-8": [
+        [5, 6],
+        [3, 6],
+      ],
+      "2-0": [
+        [4, 8],
+        [0, 2],
+      ],
+      "2-1": [[4, 5]],
+      "2-2": [
+        [1, 0],
+        [4, 2],
+      ],
+      "2-3": [[0, 5]],
+      "2-5": [[1, 3]],
+      "2-6": [
+        [5, 2],
+        [0, 8],
+      ],
+      "2-7": [[5, 5]],
+      "2-8": [
+        [1, 6],
+        [5, 8],
+      ],
+      "3-0": [
+        [4, 0],
+        [1, 2],
+      ],
+      "3-1": [[4, 3]],
+      "3-2": [
+        [0, 0],
+        [4, 6],
+      ],
+      "3-3": [[1, 5]],
+      "3-5": [[0, 3]],
+      "3-6": [
+        [5, 6],
+        [1, 8],
+      ],
+      "3-7": [[5, 3]],
+      "3-8": [
+        [0, 6],
+        [5, 0],
+      ],
+      "4-0": [
+        [3, 0],
+        [1, 2],
+      ],
+      "4-1": [[1, 1]],
+      "4-2": [
+        [2, 2],
+        [1, 0],
+      ],
+      "4-3": [[3, 1]],
+      "4-5": [[2, 1]],
+      "4-6": [
+        [0, 0],
+        [3, 2],
+      ],
+      "4-7": [[0, 1]],
+      "4-8": [
+        [0, 2],
+        [2, 0],
+      ],
+      "5-0": [
+        [0, 6],
+        [3, 8],
+      ],
+      "5-1": [[0, 7]],
+      "5-2": [
+        [2, 6],
+        [0, 8],
+      ],
+      "5-3": [[3, 7]],
+      "5-5": [[2, 7]],
+      "5-6": [
+        [1, 8],
+        [3, 6],
+      ],
+      "5-7": [[1, 7]],
+      "5-8": [
+        [2, 8],
+        [1, 6],
+      ],
     };
     return adjacentMap[`${face}-${cell}`] || [];
   };
@@ -544,8 +647,8 @@ const App = () => {
   };
 
   const getCurrentPlayerText = () => {
-    if (currentPlayer === 'X') return "Purple's turn";
-    if (currentPlayer === 'O') return "Green's turn";
+    if (currentPlayer === "X") return "Purple's turn";
+    if (currentPlayer === "O") return "Green's turn";
     return null;
   };
 
@@ -556,26 +659,118 @@ const App = () => {
         handleClose={handleModalClose}
         setGameMode={setGameMode}
       />
-      <div style={{ position: 'absolute', top: '1%', left: '50%', transform: 'translateX(-50%)' }}>
-        <button onClick={resetGame} style={{ backgroundColor: '#ff64ab', fontSize: '1rem', padding: '10px 20px', border: 'none', borderRadius: '10px', cursor: 'pointer', color:'white', fontWeight:'bold'  }}>
+      <div
+        style={{
+          position: "absolute",
+          top: "1%",
+          left: "50%",
+          transform: "translateX(-50%)",
+        }}
+      >
+        <button
+          onClick={resetGame}
+          style={{
+            backgroundColor: "#ff64ab",
+            fontSize: "1rem",
+            padding: "10px 20px",
+            border: "none",
+            borderRadius: "10px",
+            cursor: "pointer",
+            color: "white",
+            fontWeight: "bold",
+          }}
+        >
           Reset Game
         </button>
       </div>
-      {winner && <div style={{ position: 'absolute', top: '12%', left: '50%', transform: 'translateX(-50%)', fontSize: '5.3rem', color: '#6bc9ff', fontWeight:'bold'}}>Player {winner==='X'?"purple": "green"} win!</div>}
+      {winner && (
+        <div
+          style={{
+            position: "absolute",
+            top: "12%",
+            left: "50%",
+            transform: "translateX(-50%)",
+            fontSize: "5.3rem",
+            color: "#6bc9ff",
+            fontWeight: "bold",
+          }}
+        >
+          {" "}
+          {winner === "X" ? "You" : "The computer"} win!
+        </div>
+      )}
       {!winner && currentPlayer && (
-        <div style={{ backgroundColor: '#ffba46',position: 'absolute', top: '12%', left: '50%', transform: 'translateX(-50%)', fontSize: '2.8rem', borderRadius: '20px',padding: '8px 17px',color: 'white', fontWeight:'bold', fontFamily:'calibri' }}>
+        <div
+          style={{
+            backgroundColor: "#ffba46",
+            position: "absolute",
+            top: "12%",
+            left: "50%",
+            transform: "translateX(-50%)",
+            fontSize: "2.8rem",
+            borderRadius: "20px",
+            padding: "8px 17px",
+            color: "white",
+            fontWeight: "bold",
+            fontFamily: "calibri",
+          }}
+        >
           {getCurrentPlayerText()}
         </div>
       )}
-      <div style={{ position: 'absolute', top: '10%', left: '10%', cursor: 'pointer', zIndex: 1, textAlign: 'center' }}>
-        <div style={{color:'#9a8eff', fontSize: '1.5em', fontWeight:'bold'}}>Purple's Bomb</div>
-        {bombUsed['X'] ? null : <img src={bombIcon} alt="Bomb Icon X" style={{ width: 50, height: 50 }} onClick={() => { if (currentPlayer === 'X') handleBombClick(); }} />}
+      <div
+        style={{
+          position: "absolute",
+          top: "10%",
+          left: "10%",
+          cursor: "pointer",
+          zIndex: 1,
+          textAlign: "center",
+        }}
+      >
+        <div
+          style={{ color: "#9a8eff", fontSize: "1.5em", fontWeight: "bold" }}
+        >
+          Purple's Bomb
+        </div>
+        {bombUsed["X"] ? null : (
+          <img
+            src={bombIcon}
+            alt="Bomb Icon X"
+            style={{ width: 50, height: 50 }}
+            onClick={() => {
+              if (currentPlayer === "X") handleBombClick();
+            }}
+          />
+        )}
       </div>
-      <div style={{ position: 'absolute', top: '10%', right: '10%', cursor: 'pointer', zIndex: 1, textAlign: 'center' }}>
-        <div style={{color:'#00ffc1', fontSize: '1.5em', fontWeight:'bold'}}>Green's Bomb</div>
-        {bombUsed['O'] ? null : <img src={bombIcon} alt="Bomb Icon O" style={{ width: 50, height: 50 }} onClick={() => { if (currentPlayer === 'O') handleBombClick(); }} />}
+      <div
+        style={{
+          position: "absolute",
+          top: "10%",
+          right: "10%",
+          cursor: "pointer",
+          zIndex: 1,
+          textAlign: "center",
+        }}
+      >
+        <div
+          style={{ color: "#00ffc1", fontSize: "1.5em", fontWeight: "bold" }}
+        >
+          Green's Bomb
+        </div>
+        {bombUsed["O"] ? null : (
+          <img
+            src={bombIcon}
+            alt="Bomb Icon O"
+            style={{ width: 50, height: 50 }}
+            onClick={() => {
+              if (currentPlayer === "O") handleBombClick();
+            }}
+          />
+        )}
       </div>
-      <Canvas style={{ height: '100vh', marginTop:'5em' }}>
+      <Canvas style={{ height: "100vh", marginTop: "5em" }}>
         <ambientLight intensity={0.5} />
         <pointLight position={[10, 10, 10]} />
         <group>
@@ -587,7 +782,9 @@ const App = () => {
               position={getBoardPosition(idx)}
               rotation={getBoardRotation(idx)}
               onCellClick={handleCellClick}
-              winningCells={winningCells.filter(cell => cell.face === idx).map(cell => cell.cell)}
+              winningCells={winningCells
+                .filter((cell) => cell.face === idx)
+                .map((cell) => cell.cell)}
               bombMode={bombMode}
               bombCells={bombCells}
               highlightedCells={highlightedCells}
@@ -603,18 +800,24 @@ const App = () => {
 
 const getBoardPosition = (idx) => {
   const positions = [
-    [0, 0, 1.5], [0, 0, -1.5],
-    [1.5, 0, 0], [-1.5, 0, 0],
-    [0, 1.5, 0], [0, -1.5, 0],
+    [0, 0, 1.5],
+    [0, 0, -1.5],
+    [1.5, 0, 0],
+    [-1.5, 0, 0],
+    [0, 1.5, 0],
+    [0, -1.5, 0],
   ];
   return positions[idx];
 };
 
 const getBoardRotation = (idx) => {
   const rotations = [
-    [0, 0, 0], [0, Math.PI, 0],
-    [0, Math.PI / 2, 0], [0, -Math.PI / 2, 0],
-    [-Math.PI / 2, 0, 0], [Math.PI / 2, 0, 0],
+    [0, 0, 0],
+    [0, Math.PI, 0],
+    [0, Math.PI / 2, 0],
+    [0, -Math.PI / 2, 0],
+    [-Math.PI / 2, 0, 0],
+    [Math.PI / 2, 0, 0],
   ];
   return rotations[idx];
 };
