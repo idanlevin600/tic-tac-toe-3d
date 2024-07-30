@@ -561,7 +561,7 @@ const App = () => {
           Reset Game
         </button>
       </div>
-      {winner && <div style={{ position: 'absolute', top: '12%', left: '50%', transform: 'translateX(-50%)', fontSize: '6rem', color: '#6bc9ff', fontWeight:'bold'}}>Player {winner} wins!</div>}
+      {winner && <div style={{ position: 'absolute', top: '12%', left: '50%', transform: 'translateX(-50%)', fontSize: '5.3rem', color: '#6bc9ff', fontWeight:'bold'}}>Player {winner==='X'?"purple": "green"} win!</div>}
       {!winner && currentPlayer && (
         <div style={{ backgroundColor: '#ffba46',position: 'absolute', top: '12%', left: '50%', transform: 'translateX(-50%)', fontSize: '2.8rem', borderRadius: '20px',padding: '8px 17px',color: 'white', fontWeight:'bold', fontFamily:'calibri' }}>
           {getCurrentPlayerText()}
