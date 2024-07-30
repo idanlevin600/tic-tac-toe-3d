@@ -769,7 +769,7 @@ const App = () => {
           />
         )}
       </div>
-      <Canvas style={{ height: "100vh", marginTop: "5em" }}>
+      <Canvas style={{ height: "90vh", marginTop: "8em" }}>
         <ambientLight intensity={0.5} />
         <pointLight position={[10, 10, 10]} />
         <group>
