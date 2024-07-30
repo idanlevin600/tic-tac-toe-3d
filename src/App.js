@@ -1,30 +1,30 @@
 import React, { useState, useEffect } from "react";
-import { Canvas } from "@react-three/fiber";
-import { OrbitControls } from "@react-three/drei";
-import TicTacToeBoard from "./TicTacToeBoard";
-import RaycasterHandler from "./RaycasterHandler";
-import bombIcon from "./bomb.png"; // Make sure the path to the bomb image is correct
-import GameModeModal from "./GameModeModal"; // Import the new modal component
+import { Canvas } from "@react-three/fiber"; // Import for 3D rendering
+import { OrbitControls } from "@react-three/drei"; // Controls to orbit around the 3D scene
+import TicTacToeBoard from "./TicTacToeBoard"; // Custom component for the Tic Tac Toe board
+import RaycasterHandler from "./RaycasterHandler"; // Handles 3D raycasting for mouse interactions
+import bombIcon from "./bomb.png"; // Icon for the bomb power-up
+import GameModeModal from "./GameModeModal"; // Modal component to choose the game mode
 
-const MAX_DEPTH = 12; // Increase the depth limit
+const MAX_DEPTH = 12; // Maximum depth for the AI search algorithm
 
 const App = () => {
-  const initialState = Array(6)
-    .fill()
-    .map(() => Array(9).fill(null));
-  const [gameState, setGameState] = useState(initialState);
-  const [currentPlayer, setCurrentPlayer] = useState(null); // Start with no player
-  const [winner, setWinner] = useState(null);
-  const [winningCells, setWinningCells] = useState([]);
-  const [bombUsed, setBombUsed] = useState({ X: false, O: false });
-  const [bombMode, setBombMode] = useState(false);
-  const [bombCells, setBombCells] = useState([]);
-  const [highlightedCells, setHighlightedCells] = useState([]);
-  const [gameMode, setGameMode] = useState(null); // Set default game mode to null
-  const [modalOpen, setModalOpen] = useState(true); // Add state to control modal visibility
-  const [aiMovePending, setAiMovePending] = useState(false); // Flag to trigger AI move immediately
-  const [bombPending, setBombPending] = useState(false); // Flag to trigger bomb usage
+   // Initialize the game state for 6 faces, each with a 3x3 grid
+   const initialState = Array(6).fill().map(() => Array(9).fill(null));
+   const [gameState, setGameState] = useState(initialState);
+   const [currentPlayer, setCurrentPlayer] = useState(null); // Tracks the current player
+   const [winner, setWinner] = useState(null); // Tracks the winner of the game
+   const [winningCells, setWinningCells] = useState([]); // Stores the cells that form the winning line
+   const [bombUsed, setBombUsed] = useState({ X: false, O: false }); // Tracks whether each player has used their bomb
+   const [bombMode, setBombMode] = useState(false); // Flag to indicate if bomb mode is active
+   const [bombCells, setBombCells] = useState([]); // Cells affected by the bomb
+   const [highlightedCells, setHighlightedCells] = useState([]); // Cells to highlight during bomb mode
+   const [gameMode, setGameMode] = useState(null); // Game mode: single or multi-player
+   const [modalOpen, setModalOpen] = useState(true); // Controls visibility of the game mode modal
+   const [aiMovePending, setAiMovePending] = useState(false); // Indicates if an AI move is pending
+   const [bombPending, setBombPending] = useState(false); // Indicates if bomb action is pending
 
+    // Handles closing the game mode modal and setting up the game based on selected mode
   const handleModalClose = (mode) => {
     console.log("Game mode selected:", mode);
     setGameMode(mode);
@@ -37,6 +37,7 @@ const App = () => {
     }
   };
 
+    // Effect hook for handling AI moves
   useEffect(() => {
     console.log("useEffect triggered", { gameMode, currentPlayer, winner });
     if (aiMovePending && currentPlayer === "O") {
@@ -44,7 +45,7 @@ const App = () => {
       const bombDecision = shouldUseBomb(gameState);
       if (bombDecision.useBomb) {
         alert("AI wants to use the bomb!");
-        setBombPending(true);
+        setBombPending(true);// Set bomb as pending if AI decides to use it
       } else {
         const [bestFace, bestCell] = findBestMove(gameState);
         console.log("Best move found by AI:", { bestFace, bestCell });
@@ -53,7 +54,9 @@ const App = () => {
       }
     }
   }, [aiMovePending, currentPlayer, gameState]);
-
+  
+  
+  // Effect hook for handling bomb actions
   useEffect(() => {
     if (bombPending) {
       const bombDecision = shouldUseBomb(gameState);
@@ -63,16 +66,18 @@ const App = () => {
       setCurrentPlayer("X"); // Switch back to player's turn after AI uses bomb
     }
   }, [bombPending]);
-
+  
+  // Handle clicks on the game cells
   const handleCellClick = (face, cell) => {
     if (bombMode) {
       handleBombCellSelection(face, cell);
-      return;
+      return; // If bomb mode is active, handle bomb selection instead of a normal mov
     }
 
     console.log("handleCellClick triggered", { face, cell, currentPlayer });
     if (winner || gameState[face][cell] !== null) return;
-
+    
+    // Update the game state with the new move
     let newGameState = gameState.map((board, idx) => {
       if (idx === face) {
         const newBoard = [...board];
@@ -98,6 +103,8 @@ const App = () => {
 
     setGameState(newGameState);
 
+    
+    // Check for any winning combination after the move
     const { winningPlayer, winningCells } = checkCubeWin(newGameState);
     if (winningPlayer) {
       setWinner(winningPlayer);
@@ -112,7 +119,8 @@ const App = () => {
       }
     }
   };
-
+  
+  // Determine if the AI should use a bomb based on game state analysis
   const shouldUseBomb = (gameState) => {
     if (bombUsed["O"]) return { useBomb: false, bombCells: [] };
 
@@ -155,7 +163,8 @@ const App = () => {
     }
     return { useBomb: false, bombCells: [] };
   };
-
+  
+  // Handle the actual bomb usage, updating the game state accordingly
   const handleBombUsage = (bombCells) => {
     let cellsToBomb = [...bombCells];
     bombCells.forEach(({ face, cell }) => {
@@ -194,7 +203,8 @@ const App = () => {
       setTimeout(() => setAiMovePending(true), 500); // Trigger AI move after a delay
     }
   };
-
+  
+  // AI logic to determine the best move based on current game state
   const findBestMove = (gameState) => {
     let bestMove = [-1, -1];
     for (let depth = 1; depth <= MAX_DEPTH; depth++) {
@@ -202,6 +212,8 @@ const App = () => {
     }
     return bestMove;
   };
+
+  // Additional functions like resetGame, getCurrentPlayerText, etc.
 
   const findBestMoveAtDepth = (gameState, maxDepth) => {
     let bestVal = -Infinity;
@@ -797,6 +809,7 @@ const App = () => {
   );
 };
 
+// Define 3D positions for each face of the cube
 const getBoardPosition = (idx) => {
   const positions = [
     [0, 0, 1.5],
@@ -809,6 +822,7 @@ const getBoardPosition = (idx) => {
   return positions[idx];
 };
 
+// Define rotation for each face to orient it correctly in the 3D space
 const getBoardRotation = (idx) => {
   const rotations = [
     [0, 0, 0],
